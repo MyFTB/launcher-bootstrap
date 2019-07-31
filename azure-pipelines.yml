@@ -1,0 +1,37 @@
+strategy:
+  matrix:
+    linux:
+      imageName: 'ubuntu-16.04'
+      buildOs: 'linux'
+      artifactExt: 'AppImage'
+    mac:
+      imageName: 'macos-10.14'
+      buildOs: 'macos'
+      artifactExt: 'dmg'
+    windows:
+      imageName: 'vs2017-win2016'
+      buildOs: 'win'
+      artifactExt: 'exe'
+
+pool:
+  vmImage: $(imageName)
+
+steps:
+- task: NodeTool@0
+  inputs:
+    versionSpec: '8.x'
+
+- script: |
+    npm install
+    npm run dist
+
+- task: CopyFiles@2
+  inputs:
+    contents: '**/dist/*.$(artifactExt)'
+    targetFolder: '$(Build.ArtifactStagingDirectory)'
+    flattenFolders: true
+
+- task: PublishBuildArtifacts@1
+  inputs:
+    pathtoPublish: '$(Build.ArtifactStagingDirectory)'
+    artifactName: 'launcher-bootstrap-$(buildOs)'

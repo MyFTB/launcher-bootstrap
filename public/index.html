@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="script-src 'unsafe-inline'">
+
+    <title>MyFTB Launcher</title>
+    <style>
+        @font-face {
+            font-family: 'LatoWeb';
+            font-style: normal;
+            font-weight: normal;
+            text-rendering: optimizeLegibility;
+
+            src: url('Lato-Regular.woff2') format('woff2');
+        }
+        html {
+            height: 100%;
+            overflow: hidden;
+            font-family: 'LatoWeb';
+            user-select: none;
+            color: #eee;
+        }
+        body {
+            height: 100%;
+            background-color: transparent;
+            margin: 0;
+        }
+        #main {
+            background-color: #111;
+            width: 100%;
+            height: 100%;
+            border-radius: 6px;
+        }
+        video {
+            width: 100%;
+        }
+        strong, p {
+            display: block;
+            text-align: center;
+            margin: 0;
+        }
+        .spacer {
+            padding: 20px 30px 10px 30px;
+        }
+        .progressbar {
+            width: 100%;
+            height: 20px;
+            border-radius: 10px;
+            background-color: #222;
+        }
+        .progressbar > div {
+            background-color: #83da38;
+            height: 20px;
+            border-radius: 10px;
+            width: 100%;
+            transition: max-width .5s;
+        }
+    </style>
+  </head>
+  <body>
+    <div id="main">
+        <video loop autoplay src="loading.webm"></video>
+        <strong id="maintitle"></strong>
+        <div class="spacer">
+            <div class="progressbar">
+                <div id="progress" style="max-width:0;"></div>
+            </div>
+        </div>
+        <p><span id="subtitle"></span> <span id="speed"></span></p>
+    </div>
+
+    <script>
+        window.ipc.on('update-progress', (event, title, subtitle, speed, progress) => {
+            if (title) {
+                document.getElementById('maintitle').innerText = title;
+            }
+            
+            if (subtitle) {
+                document.getElementById('subtitle').innerText = subtitle;
+            }
+
+            if (speed === 'reset') {
+                document.getElementById('speed').innerText = '';
+            } else if (speed) {
+                document.getElementById('speed').innerText = '- ' + speed;
+            }
+
+            if (progress !== false) {
+                document.getElementById('progress').style.maxWidth = progress + '%';
+            }
+        });
+
+        window.ipc.send('start');
+    </script>
+  </body>
+</html>

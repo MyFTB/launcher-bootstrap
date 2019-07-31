@@ -1,0 +1,69 @@
+{
+  "name": "launcher-bootstrap",
+  "version": "1.0.0",
+  "description": "Bootstrapper für den MyFTB Launcher",
+  "main": "index.js",
+  "scripts": {
+    "start": "electron .",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder"
+  },
+  "author": "MyFTB",
+  "license": "GPL-3.0-or-later",
+  "dependencies": {
+    "arch": "^2.1.1",
+    "electron-updater": "^4.1.2"
+  },
+  "devDependencies": {
+    "electron": "^5.0.6",
+    "electron-builder": "^20.44.4"
+  },
+  "build": {
+    "appId": "de.myftb.launcher-bootstrap",
+    "productName": "MyFTBLauncher",
+    "win": {
+      "target": {
+        "target": "nsis",
+        "arch": [
+          "x64",
+          "ia32"
+        ]
+      },
+      "publish": {
+        "provider": "generic",
+        "url": "https://launcher.myftb.de/installer/windows",
+        "publishAutoUpdate": "true"
+      },
+      "publisherName": "MyFTB",
+      "artifactName": "MyFTBLauncher.${ext}"
+    },
+    "nsis": {
+      "allowElevation": false,
+      "packElevateHelper": false,
+      "shortcutName": "MyFTBLauncher",
+      "uninstallDisplayName": "MyFTBLauncher"
+    },
+    "mac": {
+      "category": "public.app-category.games",
+      "target": "dmg",
+      "publish": {
+        "provider": "generic",
+        "url": "https://launcher.myftb.de/installer/mac",
+        "publishAutoUpdate": "true"
+      }
+    },
+    "dmg": {
+      "title": "MyFTBLauncher",
+      "backgroundColor": "#222"
+    },
+    "linux": {
+      "category": "Game",
+      "artifactName": "MyFTBLauncher.${ext}",
+      "publish": {
+        "provider": "generic",
+        "url": "https://launcher.myftb.de/installer/linux",
+        "publishAutoUpdate": "true"
+      }
+    }
+  }
+}
