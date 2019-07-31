@@ -44,19 +44,21 @@
       "uninstallDisplayName": "MyFTBLauncher"
     },
     "mac": {
-      "category": "public.app-category.games",
       "target": "dmg",
+      "category": "public.app-category.games",
       "publish": {
         "provider": "generic",
         "url": "https://launcher.myftb.de/installer/mac",
         "publishAutoUpdate": "true"
-      }
+      },
+      "artifactName": "MyFTBLauncher.${ext}"
     },
     "dmg": {
       "title": "MyFTBLauncher",
       "backgroundColor": "#222"
     },
     "linux": {
+      "target": "AppImage",
       "category": "Game",
       "artifactName": "MyFTBLauncher.${ext}",
       "publish": {
