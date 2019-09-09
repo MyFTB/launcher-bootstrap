@@ -3,6 +3,7 @@ const https = require('https');
 const fs = require('fs');
 const path = require('path');
 const url = require('url');
+const logging = require('./logging');
 
 function getOptions(path) {
     let options = {
@@ -116,31 +117,50 @@ function downloadFilePromise(basePath, obj, speedometer) {
 
 /**
  * Synchronisiert die Elemente eines Indizes.
- * @param {string} index Index-URL 
+ * @param {string} indexPath Index-URL 
  * @param {string} basePath Grundverzeichnis
  * @param {function(length)} speedometer Speedometer zur Messung der Transferrate
  * @param {function(error, Promise)} cb Callback mit Fehler bzw. einem Promise für alle Aufgaben
  * @param {function(length)} progressCb Callback zur Fortschrittsanzeige
  */
-function checkIndex(index, basePath, speedometer, cb, progressCb) {
-    request(index, (err, data) => {
+function checkIndex(indexPath, basePath, speedometer, cb, progressCb) {
+    logging.log('INFO', 'Überprüfe Index ' + indexPath + ' mit Grundverzeichnis ' + basePath);
+    request(indexPath, (err, data) => {
         if (err) {
             return cb(err);
         }
 
         let index = JSON.parse(data.toString());
         let proms = [];
+        logging.log('INFO', 'Index ' + indexPath + ' hat ' + index.objects.length + ' Objekte');
 
         for (let obj of index.objects) {
             proms.push(new Promise((resolve, reject) => {
                 let progress = progressCb(index.objects.length);
                 let prom = downloadFilePromise(basePath, obj, speedometer);
+                logging.log('INFO', 'Überprüfe Objekt ' + JSON.stringify(obj));
                 prom(arg => {
                     progress();
                     resolve(arg);
+                    logging.log('INFO', obj.path + ' erfolgreich überprüft und vollständig (1/3)');
                 }, arg => {
-                    progress();
-                    reject(arg);
+                    logging.log('ERROR', 'Fehler beim Herunterladen von ' + obj.path + ' (1/3): ' + arg);
+                    prom(arg => {
+                        progress();
+                        resolve(arg);
+                        logging.log('INFO', obj.path + ' erfolgreich überprüft und vollständig (2/3)');
+                    }, arg => {
+                        logging.log('ERROR', 'Fehler beim Herunterladen von ' + obj.path + ' (2/3): ' + arg);
+                        prom(arg => {
+                            progress();
+                            resolve(arg);
+                            logging.log('INFO', obj.path + ' erfolgreich überprüft und vollständig (3/3)');
+                        }, arg => {
+                            progress();
+                            reject(arg);
+                            logging.log('ERROR', 'Fehler beim Herunterladen von ' + obj.path + ' (3/3): ' + arg);
+                        });
+                    });
                 });
             }));
         }

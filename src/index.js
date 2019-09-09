@@ -3,12 +3,17 @@ const { autoUpdater } = require("electron-updater")
 const { spawn } = require('child_process');
 const path = require('path');
 const arch = require('arch');
-const bootstrap = require('./bootstrap/bootstrap');
+const os = require('os');
+const logging = require('./logging');
+const bootstrap = require('./bootstrap');
 const speedometer = require('./speedometer');
 
 autoUpdater.checkForUpdatesAndNotify();
 
+logging.init(path.join(os.homedir(), 'myftblauncher-bootstrap.log'));
 const dir = (process.env.APPDATA || (process.platform == 'darwin' ? process.env.HOME + '/Library/Application Support' : process.env.HOME + "/.local/share")) + '/MyFTBLauncher';
+logging.log('INFO', 'Ausführverzeichnis: ' + __dirname);
+logging.log('INFO', 'Launcherverzeichnis: ' + dir);
 
 let mainWindow;
 
@@ -49,6 +54,7 @@ function updateProgress(title, subtitle, progress, speed) {
 }
 
 function showError(text, err) {
+    logging.log('FATAL', text + ': ' + err);
     dialog.showMessageBox({
         type: 'error',
         title: 'MyFTB Launcher',
@@ -96,6 +102,7 @@ function installApp() {
         }
 
         let executable = path.join(dir, 'MyFTBLauncher.app', 'Contents', 'MacOS', 'MyFTBLauncher');
+        logging.log('INFO', 'Starte Launcher: ' + executable);
         spawn(executable, [], {cwd: dir, detached: true});
         app.quit();
     });
@@ -128,11 +135,13 @@ function install() {
                 }
     
                 let javaExecutable = path.join(dir, 'runtime', 'bin', 'java' + (os === 'windows' ? '.exe' : ''));
+                let javaArgs = ['-XX:+UseG1GC', '-Djava.library.path=' + path.join(dir, 'jcef'), '-Dlauncher.app.path=' + process.argv[0], '-jar', path.join(dir, 'launcher.jar')];
                 let processEnv = {};
                 Object.assign(processEnv, process.env);
                 processEnv.LD_LIBRARY_PATH = path.join(dir, 'runtime', 'lib', arch() === 'x64' ? 'amd64' : 'i386');
+                logging.log('INFO', 'Starte Launcher: ' + javaExecutable + ' ' + javaArgs);
                 spawn(
-                    javaExecutable, ['-XX:+UseG1GC', '-Djava.library.path=' + path.join(dir, 'jcef'), '-Dlauncher.app.path=' + process.argv[0], '-jar', path.join(dir, 'launcher.jar')],
+                    javaExecutable, javaArgs,
                     {cwd: dir, detached: true, env: processEnv}
                 );
                 app.quit();
