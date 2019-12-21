@@ -1,5 +1,4 @@
 const { app, BrowserWindow, dialog, ipcMain } = require('electron');
-const { autoUpdater } = require("electron-updater")
 const { spawn } = require('child_process');
 const path = require('path');
 const arch = require('arch');
@@ -7,11 +6,14 @@ const os = require('os');
 const logging = require('./logging');
 const bootstrap = require('./bootstrap');
 const speedometer = require('./speedometer');
-
-autoUpdater.checkForUpdatesAndNotify();
+const updater = require('./updater');
 
 logging.init(path.join(os.homedir(), 'myftblauncher-bootstrap.log'));
 const dir = (process.env.APPDATA || (process.platform == 'darwin' ? process.env.HOME + '/Library/Application Support' : process.env.HOME + "/.local/share")) + '/MyFTBLauncher';
+logging.log('INFO', 'Launcher-Version: ' + app.getVersion());
+logging.log('INFO', '    NodeJS-Version: ' + process.versions.node);
+logging.log('INFO', '    Electron-Version: ' + process.versions.electron);
+logging.log('INFO', '    Chrome-Version: ' + process.versions.chrome);
 logging.log('INFO', 'Ausführverzeichnis: ' + __dirname);
 logging.log('INFO', 'Launcherverzeichnis: ' + dir);
 
@@ -151,9 +153,25 @@ function install() {
 }
 
 ipcMain.once('start', () => {
-    if (process.platform === 'darwin') {
-        installApp();
-    } else {
-        install();
-    }
+    logging.log('INFO', 'Überprüfe auf Bootstrapper-Updates');
+    updateProgress('Überprüfe auf Updates', 'Launcher', 0);
+    updater((err, status) => {
+        if (err) {
+            logging.log('ERROR', 'Fehler bei der Updateüberprüfung: ' + JSON.stringify(err));
+        } else {
+            logging.log('INFO', 'Updateüberprüfung abgeschlossen: ' + JSON.stringify(status.info));
+
+            if (status.installer) {
+                logging.log('INFO', 'State Launcher zum Abschluss von Update neu');
+                status.installer();
+                return;
+            }
+        }
+
+        if (process.platform === 'darwin') {
+            installApp();
+        } else {
+            install();
+        }
+    });
 });

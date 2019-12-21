@@ -56,6 +56,14 @@
             width: 100%;
             transition: max-width .5s;
         }
+        #app-version {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            padding: 5px;
+            font-size: 75%;
+            color: #444;
+        }
     </style>
   </head>
   <body>
@@ -68,9 +76,11 @@
             </div>
         </div>
         <p><span id="subtitle"></span> <span id="speed"></span></p>
+        <span id="app-version"></span>
     </div>
 
     <script>
+        document.getElementById('app-version').innerText = window.appVersion;
         window.ipc.on('update-progress', (event, title, subtitle, speed, progress) => {
             if (title) {
                 document.getElementById('maintitle').innerText = title;
