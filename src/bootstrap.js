@@ -65,7 +65,7 @@ function downloadFile(url, targetFile, speedometer, cb) {
         });
 
         res.on('end', () => {
-            fileStream.end();
+            fileStream.end(() => fs.chmodSync(targetFile, 0o755));
             return cb(false, hash.digest('hex'));
         });
     });
