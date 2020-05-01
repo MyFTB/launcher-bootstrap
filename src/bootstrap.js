@@ -1,34 +1,36 @@
 const crypto = require('crypto');
-const https = require('https');
 const fs = require('fs');
 const path = require('path');
 const url = require('url');
 const logging = require('./logging');
+const { app, net } = require('electron');
 
-function getOptions(path) {
+function createRequest(path) {
     let options = {
         method: 'GET',
-        host: 'launcher.myftb.de',
-        port: 443,
-        path: path,
         protocol: 'https:',
-        timeout: 90000,
-        headers: {
-            'User-Agent': 'MyFTB Launcher Bootstrapper'
-        }
-    };
+        port: 443,
+        host: 'launcher.myftb.de',
+        path,
+    }
 
     if (path.startsWith('http')) {
         Object.assign(options, url.parse(path));
     }
 
-    return options;
+    let request = net.request(options);
+
+    request.setHeader('User-Agent', 'MyFTB Launcher Bootstrapper ' + app.getVersion());
+
+    return request;
 }
 
 function request(path, cb) {
-    let req = https.request(getOptions(path), (res) => {
-        let chunks = [];
-
+    let req = createRequest(path);
+    req.on('error', err => cb(err));
+    
+    let chunks = [];
+    req.on('response', (res) => {
         if (res.statusCode !== 200) {
             return cb('Ungültiger Statuscode für ' + path + ': ' + res.statusCode);
         }
@@ -37,7 +39,6 @@ function request(path, cb) {
         res.on('end', () => cb(false, Buffer.concat(chunks)));
     });
 
-    req.on('error', err => cb(err));
     req.end();
 }
 
@@ -50,7 +51,10 @@ function downloadFile(url, targetFile, speedometer, cb) {
         }
     }
 
-    let req = https.request(getOptions(url), res => {
+    let req = createRequest(url);
+    req.on('error', err => cb(err));
+
+    req.on('response', (res) => {
         if (res.statusCode !== 200) {
             return cb('Ungültiger Statuscode für ' + url + ': ' + res.statusCode);
         }
@@ -70,7 +74,6 @@ function downloadFile(url, targetFile, speedometer, cb) {
         });
     });
 
-    req.on('error', err => cb(err));
     req.end();
 }
 
@@ -169,4 +172,4 @@ function checkIndex(indexPath, basePath, speedometer, cb, progressCb) {
     });
 }
 
-module.exports = { checkIndex: checkIndex };
+module.exports = { checkIndex };
