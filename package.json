@@ -11,7 +11,7 @@
   "author": "MyFTB",
   "license": "GPL-3.0-or-later",
   "dependencies": {
-    "arch": "^2.1.1",
+    "arch": "^2.1.2",
     "electron-updater": "^4.2.5"
   },
   "devDependencies": {
