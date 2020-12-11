@@ -36,6 +36,6 @@ jobs:
           files: dist/MyFTBLauncher.exe dist/MyFTBLauncher.exe.blockmap dist/latest.yml dist/MyFTBLauncher.dmg dist/MyFTBLauncher.dmg.blockmap dist/latest-mac.yml dist/MyFTBLauncher.AppImage dist/latest-linux.yml
           dest: dist/launcher-bootstrap-${{ matrix.launcher_dist }}.zip
       - name: Upload Release Assets
-        run: hub release edit -a launcher-bootstrap-${{ matrix.launcher_dist }}.zip -m "" ${GITHUB_REF#refs/tags/}
+        run: hub release edit -a dist/launcher-bootstrap-${{ matrix.launcher_dist }}.zip -m "" ${GITHUB_REF#refs/tags/}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
