@@ -35,7 +35,15 @@ jobs:
         with:
           files: dist/MyFTBLauncher.exe dist/MyFTBLauncher.exe.blockmap dist/latest.yml dist/MyFTBLauncher.dmg dist/MyFTBLauncher.dmg.blockmap dist/latest-mac.yml dist/MyFTBLauncher.AppImage dist/latest-linux.yml
           dest: dist/launcher-bootstrap-${{ matrix.launcher_dist }}.zip
+
       - name: Upload Release Assets
-        run: hub release edit -a dist/launcher-bootstrap-${{ matrix.launcher_dist }}.zip -m "Launcher Bootstrap" ${GITHUB_REF#refs/tags/}
+        if: matrix.os != 'windows-latest'
+        run: hub release edit -a dist/launcher-bootstrap-${{ matrix.launcher_dist }}.zip -m "${GITHUB_REF#refs/tags/v}" ${GITHUB_REF#refs/tags/}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Release Assets
+        if: matrix.os == 'windows-latest'
+        run: hub release edit -a dist/launcher-bootstrap-${{ matrix.launcher_dist }}.zip -m ($env:GITHUB_REF -replace 'refs/tags/v','') ($env:GITHUB_REF -replace 'refs/tags/','')
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
