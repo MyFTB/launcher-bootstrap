@@ -12,7 +12,9 @@ function init(logFile) {
 
 function log(level, message) {
     let finalMsg = '[' + level + '] ' + message;
-    stream.write(finalMsg + '\n');
+    if (stream) {
+        stream.write(finalMsg + '\n');
+    }
     console.log(finalMsg);
 }
 

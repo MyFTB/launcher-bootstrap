@@ -3,10 +3,23 @@ const { spawn } = require('child_process');
 const path = require('path');
 const arch = require('arch');
 const os = require('os');
+const fs = require('fs');
 const logging = require('./logging');
 const bootstrap = require('./bootstrap');
 const speedometer = require('./speedometer');
 const updater = require('./updater');
+
+process.on("uncaughtException", err => {
+    const stack = err.stack ? err.stack : `${err.name}: ${err.message}`;
+    logging.log('ERROR', 'Unerwarteter Fehler:\n' + stack);
+    dialog.showErrorBox(
+        'Ein unerwarteter Fehler ist aufgetreten',
+        'Bei der Ausführung des MyFTBLaunchers ist ein Fehler aufgetreten.'
+            + '\nBitte versuche es erneut oder wende dich bei häufigerem Auftreten an den Support mit der folgenden Fehlermeldung:'
+            + '\n\n' + stack
+    );
+    process.exit(1);
+});
 
 logging.init(path.join(os.homedir(), 'myftblauncher-bootstrap.log'));
 const dir = (process.env.APPDATA || (process.platform == 'darwin' ? process.env.HOME + '/Library/Application Support' : process.env.HOME + "/.local/share")) + '/MyFTBLauncher';
@@ -18,6 +31,16 @@ logging.log('INFO', 'Ausführverzeichnis: ' + __dirname);
 logging.log('INFO', 'Launcherverzeichnis: ' + dir);
 
 let mainWindow;
+let config = {};
+
+try {
+    let configFilePath = path.join(os.homedir(), 'myftblauncher-config.json');
+    if (fs.existsSync(configFilePath)) {
+        config = JSON.parse(fs.readFileSync(configFilePath));
+    }
+} catch (e) {
+    logging.log('ERROR', 'Fehler beim Einlesen der Konfigurationsdatei: ' + e)
+}
 
 function createWindow () {
     mainWindow = new BrowserWindow({
@@ -27,7 +50,8 @@ function createWindow () {
         transparent: true,
         webPreferences: {
             nodeIntegration: false,
-            preload: path.join(__dirname, 'public', 'preload.js')
+            preload: path.join(__dirname, 'public', 'preload.js'),
+            enableRemoteModule: true
         }
     });
     mainWindow.loadURL('file://' + __dirname + '/public/index.html');
@@ -61,10 +85,17 @@ function showError(text, err) {
         type: 'error',
         title: 'MyFTB Launcher',
         message: text + '\nBitte versuche es erneut oder wende dich bei häufigerem Auftreten an den Support\n' + err
-    }, () => app.quit());
+    }).then(() => app.exit(1));
 }
 
 function doIndex(index, baseDir, cb) {
+    if ('channels' in config) {
+        if (index in config['channels']) {
+            logging.log('INFO', 'Verwende benutzerdefinierten Kanal ' + config['channels'][index] + ' für Index ' + index);
+            index = config['channels'][index] + '_' + index;
+        }
+    }
+
     let progress = 0;
     let speed = speedometer();
     let interval = setInterval(() => {
@@ -77,7 +108,7 @@ function doIndex(index, baseDir, cb) {
 
     updateProgress(false, false, false, 'reset');
 
-    bootstrap.checkIndex(index, baseDir, speed, (err, prom) => {
+    bootstrap.checkIndex('/' + index + '.json', baseDir, speed, (err, prom) => {
         if (err) {
             console.error(err);
             return cb(err);
@@ -98,7 +129,7 @@ function doIndex(index, baseDir, cb) {
 
 function installApp() {
     updateProgress('Überprüfe Dateien', 'Launcher', 0);
-    doIndex('/launcher-macos.json', dir, (err) => {
+    doIndex('launcher-macos', dir, (err) => {
         if (err) {
             return showError('Die Integrität des Launchers konnte nicht überprüft werden', err);
         }
@@ -119,19 +150,19 @@ function install() {
     let osStr = os + (arch() === 'x64' ? '-x64': '');
 
     updateProgress('Überprüfe Dateien', 'Launcher', 0);
-    doIndex('/launcher.json', dir, (err) => {
+    doIndex('launcher', dir, (err) => {
         if (err) {
             return showError('Die Integrität des Launchers konnte nicht überprüft werden', err);
         }
 
         updateProgress('Überprüfe Dateien', 'Java', 0);
-        doIndex('/jre-' + osStr + '.json', path.join(dir, 'runtime'), (err) => {
+        doIndex('jre-' + osStr, path.join(dir, 'runtime'), (err) => {
             if (err) {
                 return showError('Die Integrität der Java Runtime Environment konnte nicht überprüft werden', err);
             }
 
             updateProgress('Überprüfe Dateien', 'JCEF', 0);
-            doIndex('/jcef-' + osStr + '.json', path.join(dir, 'jcef'), (err) => {
+            doIndex('jcef-' + osStr, path.join(dir, 'jcef'), (err) => {
                 if (err) {
                     return showError('Die Integrität des Chromium Embedded Framework konnte nicht überprüft werden', err);
                 }
