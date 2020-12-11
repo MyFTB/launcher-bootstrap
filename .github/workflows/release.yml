@@ -1,0 +1,41 @@
+name: Launcher Bootstrap Release
+
+on:
+  release:
+    types: [ created ]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+        - os: ubuntu-latest
+          launcher_dist: linux
+        - os: macos-latest
+          launcher_dist: macos
+        - os: windows-latest
+          launcher_dist: win
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2-beta
+        with:
+          node-version: '13'
+      - name: Install dependencies
+        run: npm install
+      - name: Build App
+        run: npm run dist
+        env:
+          CSC_LINK: ${{ secrets.SIGN_CERTIFICATE }}
+          CSC_KEY_PASSWORD: ${{ secrets.SIGN_PASSWORD }}
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      - uses: papeloto/action-zip@v1
+        with:
+          files: dist/MyFTBLauncher.exe dist/MyFTBLauncher.exe.blockmap dist/latest.yml dist/MyFTBLauncher.dmg dist/MyFTBLauncher.dmg.blockmap dist/latest-mac.yml dist/MyFTBLauncher.AppImage dist/latest-linux.yml
+          dest: dist/launcher-bootstrap-${{ matrix.launcher_dist }}.zip
+      - name: Upload Release Assets
+        run: hub release edit -a launcher-bootstrap-${{ matrix.launcher_dist }}.zip -m "" ${GITHUB_REF#refs/tags/}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

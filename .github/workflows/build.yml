@@ -1,0 +1,31 @@
+name: Launcher Bootstrap Build
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+        - os: ubuntu-latest
+          launcher_dist: linux
+        - os: macos-latest
+          launcher_dist: macos
+        - os: windows-latest
+          launcher_dist: win
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2-beta
+        with:
+          node-version: '13'
+      - name: Install dependencies
+        run: npm install
+      - name: Build App
+        run: npm run dist
