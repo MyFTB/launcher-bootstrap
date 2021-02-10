@@ -127,6 +127,32 @@ function doIndex(index, baseDir, cb) {
     });
 }
 
+function superviseStart(proc) {
+    mainWindow.hide();
+    logging.log('INFO', 'Überwache Launcher-Start für 5 Sekunden');
+
+    let running = true;
+
+    proc.on('exit', code => {
+        logging.log('ERROR', 'Launcher-Prozess mit Code ' + code + ' beendet');
+        if (code) {
+            running = false;
+            return showError('Der Launcher-Prozess wurde frühzeitig beendet', 'Prozess mit Code ' + code + ' beendet');
+        }
+    });
+
+    [proc.stdout, proc.stderr].forEach(stream => stream.on('data', data => {
+        logging.log('INFO', 'Launcher-Ausgabe: ' + data.toString().trim())
+    }));
+
+    setTimeout(() => {
+        if (running) {
+            logging.log('INFO', 'Boostrapper wird beendet');
+            app.quit();
+        }
+    }, 5000);
+}
+
 function installApp() {
     updateProgress('Überprüfe Dateien', 'Launcher', 0);
     doIndex('launcher-macos', dir, (err) => {
@@ -136,8 +162,7 @@ function installApp() {
 
         let executable = path.join(dir, 'MyFTBLauncher.app', 'Contents', 'MacOS', 'MyFTBLauncher');
         logging.log('INFO', 'Starte Launcher: ' + executable);
-        spawn(executable, [], {cwd: dir, detached: true});
-        app.quit();
+        superviseStart(spawn(executable, [], {cwd: dir, detached: true}));
     });
 }
 
@@ -173,11 +198,10 @@ function install() {
                 Object.assign(processEnv, process.env);
                 processEnv.LD_LIBRARY_PATH = path.join(dir, 'runtime', 'lib', arch() === 'x64' ? 'amd64' : 'i386');
                 logging.log('INFO', 'Starte Launcher: ' + javaExecutable + ' ' + javaArgs);
-                spawn(
+                superviseStart(spawn(
                     javaExecutable, javaArgs,
                     {cwd: dir, detached: true, env: processEnv}
-                );
-                app.quit();
+                ));
             });
         });
     });
