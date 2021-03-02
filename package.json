@@ -16,7 +16,7 @@
   },
   "devDependencies": {
     "electron": "^11.2.3",
-    "electron-builder": "^22.9.1"
+    "electron-builder": "^22.10.5"
   },
   "build": {
     "appId": "de.myftb.launcher-bootstrap",
