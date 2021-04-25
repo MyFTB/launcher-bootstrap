@@ -80,8 +80,8 @@
     </div>
 
     <script>
-        document.getElementById('app-version').innerText = window.appVersion;
-        window.ipc.on('update-progress', (event, title, subtitle, speed, progress) => {
+        document.getElementById('app-version').innerText = window.launcher.appVersion;
+        window.launcher.ipcReceive('update-progress', (event, title, subtitle, speed, progress) => {
             if (title) {
                 document.getElementById('maintitle').innerText = title;
             }
@@ -101,7 +101,7 @@
             }
         });
 
-        window.ipc.send('start');
+        window.launcher.ipcSend('start');
     </script>
   </body>
 </html>

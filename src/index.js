@@ -9,6 +9,10 @@ const bootstrap = require('./bootstrap');
 const speedometer = require('./speedometer');
 const updater = require('./updater');
 
+const electronRemote = require('@electron/remote/main');
+
+electronRemote.initialize();
+
 process.on("uncaughtException", err => {
     const stack = err.stack ? err.stack : `${err.name}: ${err.message}`;
     logging.log('ERROR', 'Unerwarteter Fehler:\n' + stack);
